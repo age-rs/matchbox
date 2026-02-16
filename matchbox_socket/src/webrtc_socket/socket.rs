@@ -648,7 +648,8 @@ impl WebRtcSocket {
         self.get_channel(channel).unwrap()
     }
 
-    /// Gets a mutable reference to the [`WebRtcChannel`] of a given id.
+    /// Gets a mutable reference to the [`WebRtcChannel`] at the specified index.
+    /// The channels are indexed based on the order they were added to the builder.
     ///
     /// ```
     /// use matchbox_socket::*;
@@ -666,11 +667,12 @@ impl WebRtcSocket {
     /// # Panics
     ///
     /// will panic if the channel cannot be found.
-    pub fn channel_mut(&mut self, channel: usize) -> &mut WebRtcChannel {
-        self.get_channel_mut(channel).unwrap()
+    pub fn channel_mut(&mut self, channel_index: usize) -> &mut WebRtcChannel {
+        self.get_channel_mut(channel_index).unwrap()
     }
 
-    /// Gets an immutable reference to the [`WebRtcChannel`] of a given id.
+    /// Gets an immutable reference to the [`WebRtcChannel`] at the specified index.
+    /// The channels are indexed based on the order they were added to the builder.
     ///
     /// Returns an error if the channel was not found.
     ///
@@ -685,15 +687,16 @@ impl WebRtcSocket {
     /// ```
     ///
     /// See also: [`WebRtcSocket::get_channel_mut`], [`WebRtcSocket::take_channel`]
-    pub fn get_channel(&self, channel: usize) -> Result<&WebRtcChannel, ChannelError> {
+    pub fn get_channel(&self, channel_index: usize) -> Result<&WebRtcChannel, ChannelError> {
         self.channels
-            .get(channel)
+            .get(channel_index)
             .ok_or(ChannelError::NotFound)?
             .as_ref()
             .ok_or(ChannelError::Taken)
     }
 
-    /// Gets a mutable reference to the [`WebRtcChannel`] of a given id.
+    /// Gets a mutable reference to the [`WebRtcChannel`] at the specified index.
+    /// The channels are indexed based on the order they were added to the builder.
     ///
     /// Returns an error if the channel was not found.
     ///
@@ -708,9 +711,12 @@ impl WebRtcSocket {
     /// ```
     ///
     /// See also: [`WebRtcSocket::channel`], [`WebRtcSocket::take_channel`]
-    pub fn get_channel_mut(&mut self, channel: usize) -> Result<&mut WebRtcChannel, ChannelError> {
+    pub fn get_channel_mut(
+        &mut self,
+        channel_index: usize,
+    ) -> Result<&mut WebRtcChannel, ChannelError> {
         self.channels
-            .get_mut(channel)
+            .get_mut(channel_index)
             .ok_or(ChannelError::NotFound)?
             .as_mut()
             .ok_or(ChannelError::Taken)
