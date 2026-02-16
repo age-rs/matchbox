@@ -769,20 +769,14 @@ impl WebRtcSocket {
         Ok(peer_channel)
     }
 
-    /// Returns whether any socket channel is closed
+    /// Returns whether any (non-taken) socket channel is closed.
     pub fn any_channel_closed(&self) -> bool {
-        self.channels
-            .iter()
-            .filter_map(Option::as_ref)
-            .any(|c| c.is_closed())
+        self.channels.iter().flatten().any(|c| c.is_closed())
     }
 
-    /// Returns whether all socket channels are closed
+    /// Returns whether all (non-taken) socket channels are closed.
     pub fn all_channels_closed(&self) -> bool {
-        self.channels
-            .iter()
-            .filter_map(Option::as_ref)
-            .all(|c| c.is_closed())
+        self.channels.iter().flatten().all(|c| c.is_closed())
     }
 }
 
@@ -972,7 +966,15 @@ mod test {
         builder = builder.add_reliable_channel();
         let (mut socket, _fut) = builder.build();
         assert!(socket.channels[0].is_some());
+
+        assert!(!socket.any_channel_closed());
+        assert!(!socket.all_channels_closed());
+
         let mut taken = socket.take_channel(0).unwrap();
+
+        assert!(!socket.any_channel_closed());
+        assert!(socket.all_channels_closed());
+
         assert!(socket.channels[0].is_none());
         assert!(matches!(
             socket.take_channel(0).unwrap_err(),
@@ -981,5 +983,26 @@ mod test {
         assert!(!taken.is_closed());
         taken.close();
         assert!(taken.is_closed());
+    }
+
+    #[test]
+    fn closed_channels() {
+        let mut builder = WebRtcSocket::builder("wss://example.invalid");
+        builder = builder.add_reliable_channel();
+        builder = builder.add_reliable_channel();
+        let (mut socket, _fut) = builder.build();
+
+        assert!(!socket.any_channel_closed());
+        assert!(!socket.all_channels_closed());
+
+        socket.get_channel_mut(0).unwrap().close();
+
+        assert!(socket.any_channel_closed());
+        assert!(!socket.all_channels_closed());
+
+        socket.get_channel_mut(1).unwrap().close();
+
+        assert!(socket.any_channel_closed());
+        assert!(socket.all_channels_closed());
     }
 }
